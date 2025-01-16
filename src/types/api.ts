@@ -1,4 +1,4 @@
-export type GenerationStatus = 
+export type GenerationStatus =
   | "idle"
   | "pending"
   | "generating_content"

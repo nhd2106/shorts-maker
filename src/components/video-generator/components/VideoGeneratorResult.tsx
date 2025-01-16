@@ -9,6 +9,7 @@ import { motion } from "motion/react";
 import { AlertCircle, RefreshCcw } from "lucide-react";
 import { getDownloadUrl } from "@/api";
 import { RefreshCw, Video, FileText, Image as ImageIcon } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface VideoGeneratorResultProps {
   status: GenerationStatus;
@@ -29,8 +30,38 @@ export function VideoGeneratorResult({
   onRetry,
   selectedFormat,
 }: VideoGeneratorResultProps) {
-  const handleDownload = async (url: string) => {
-    window.open(getDownloadUrl(url), "_blank");
+  const [title, setTitle] = useState("video");
+
+  useEffect(() => {
+    const fetchTitle = async () => {
+      try {
+        if (result?.content?.url && status === "completed") {
+          const response = await fetch(result.content.url);
+          const text = await response.text();
+          const firstLine = text.split("\n")[0].trim();
+          setTitle(
+            firstLine
+              .toLowerCase()
+              .replace(/[^a-z0-9-\s]/g, "")
+              .replace(/\s+/g, "-") || "video"
+          );
+        }
+      } catch (err) {
+        console.error("Error fetching title:", err);
+      }
+    };
+    fetchTitle();
+  }, [result?.content?.url, status]);
+
+  const handleDownload = async (url: string, filename?: string) => {
+    const link = document.createElement("a");
+    link.href = getDownloadUrl(url);
+    if (filename) {
+      link.download = filename;
+    }
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // console.log(status, error);
@@ -91,7 +122,9 @@ export function VideoGeneratorResult({
                   }}
                 />
                 <Button
-                  onClick={() => handleDownload(result.content.url)}
+                  onClick={() =>
+                    handleDownload(result.content.url, `${title}.txt`)
+                  }
                   variant="outline"
                   className="w-full gap-2"
                 >
@@ -116,7 +149,12 @@ export function VideoGeneratorResult({
                   />
                 </div>
                 <Button
-                  onClick={() => handleDownload(result.thumbnail.url)}
+                  onClick={() =>
+                    handleDownload(
+                      result.thumbnail.url,
+                      `${title}-thumbnail.jpg`
+                    )
+                  }
                   variant="outline"
                   className="w-full gap-2"
                 >
@@ -128,7 +166,7 @@ export function VideoGeneratorResult({
           </div>
         </div>
         <Button
-          onClick={() => handleDownload(result.video.url)}
+          onClick={() => handleDownload(result.video.url, `${title}.mp4`)}
           className="w-full gap-2"
         >
           <Video className="w-4 h-4" />

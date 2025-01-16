@@ -1,7 +1,7 @@
 import { HistoryItem } from "@/types/video-generator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
-import { Trash2, Settings, PanelLeft } from "lucide-react";
+import { Trash2, Settings, PanelLeft, AlertCircle } from "lucide-react";
 import { motion } from "motion/react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
@@ -93,6 +93,8 @@ export function HistorySidebar() {
     localStorage.setItem("api-keys", JSON.stringify(apiKeys));
   };
 
+  const missingRequiredKeys = !apiKeys.openai || !apiKeys.together;
+
   return (
     <div
       className={`border-r border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm hidden lg:flex flex-col h-screen transition-all duration-300 ${
@@ -118,6 +120,13 @@ export function HistorySidebar() {
           </h3>
         )}
       </div>
+
+      {!isCollapsed && missingRequiredKeys && (
+        <div className="mx-4 mt-4 p-4 text-sm border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 rounded-lg flex items-center gap-2 text-red-800 dark:text-red-200">
+          <AlertCircle className="h-4 w-4" />
+          <p>OpenAI and Together AI keys are required for video generation.</p>
+        </div>
+      )}
 
       {!isCollapsed && (
         <>

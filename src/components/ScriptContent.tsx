@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Copy, Hash } from "lucide-react";
+import { AlertCircle, Copy, Hash, Check } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -17,6 +17,11 @@ interface ScriptContentProps {
 export default function ScriptContent({ content }: ScriptContentProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState({
+    title: false,
+    script: false,
+    tags: false,
+  });
   const [parsedContent, setParsedContent] = useState<{
     title: string;
     script: string;
@@ -60,13 +65,20 @@ export default function ScriptContent({ content }: ScriptContentProps) {
     }
   }, [content?.url]);
 
-  const handleCopy = async (text: string) => {
+  const handleCopy = async (
+    text: string,
+    type: "title" | "script" | "tags"
+  ) => {
     try {
       await navigator.clipboard.writeText(text);
+      setCopied((prev) => ({ ...prev, [type]: true }));
       toast.success("Copied to clipboard!");
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      setTimeout(() => {
+        setCopied((prev) => ({ ...prev, [type]: false }));
+      }, 2000);
     } catch (err) {
       toast.error("Failed to copy text");
+      console.error("Failed to copy text", err);
     }
   };
 
@@ -109,15 +121,47 @@ export default function ScriptContent({ content }: ScriptContentProps) {
           <h3 className="font-semibold">{parsedContent.title}</h3>
           <p className="text-sm text-muted-foreground">Generated Script</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          onClick={() => handleCopy(parsedContent.script)}
-        >
-          <Copy className="h-4 w-4" />
-          Copy
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => handleCopy(parsedContent.title, "title")}
+          >
+            {copied.title ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+            Copy Title
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => handleCopy(parsedContent.script, "script")}
+          >
+            {copied.script ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+            Copy Script
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => handleCopy(parsedContent.hashtags.join(" "), "tags")}
+          >
+            {copied.tags ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+            Copy Tags
+          </Button>
+        </div>
       </div>
 
       <Card className="p-4">
@@ -136,7 +180,7 @@ export default function ScriptContent({ content }: ScriptContentProps) {
                 key={index}
                 variant="secondary"
                 className="cursor-pointer"
-                onClick={() => handleCopy(tag)}
+                onClick={() => handleCopy(tag, "tags")}
               >
                 {tag}
               </Badge>
