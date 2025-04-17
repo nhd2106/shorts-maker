@@ -6,19 +6,21 @@
   "permissions": [
     "core:default",
     {
-      "identifier": "shell:allow-execute",
-      "allow": [
-        {
-          "name": "binaries/my-sidecar",
-          "sidecar": true
-        }
-      ]
+      "identifier": "shell:allow-execute"
     },
     {
       "identifier": "fs:allow-app-write",
       "allow": [
         {
           "path": "$DOWNLOAD_DIR"
+        }
+      ]
+    },
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "http://*"
         }
       ]
     },
@@ -29,6 +31,7 @@
     "fs:allow-write",
     "fs:allow-create",
     "fs:allow-rename",
-    "shell:allow-spawn"
+    "shell:allow-spawn",
+    "http:default"
   ]
 }

@@ -5,7 +5,7 @@
   "identifier": "com.shorts-maker",
   "build": {
     "frontendDist": "../dist",
-    "devUrl": "http://localhost:3000",
+    "devUrl": "http://localhost:3030",
     "beforeDevCommand": "bun run dev",
     "beforeBuildCommand": "bun run build"
   },
@@ -32,7 +32,6 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ],
-    "externalBin": ["./binaries/my-sidecar"]
+    ]
   }
 }

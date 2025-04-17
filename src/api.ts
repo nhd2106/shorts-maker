@@ -6,7 +6,7 @@ import axios from "axios";
 
 // const message = "tauri";
 
-const API_BASE_URL = "http://100.42.191.126:5123";
+const API_BASE_URL = "https://shorts.duoc95.com";
 
 // Create axios instance with default config
 const api = axios.create({
