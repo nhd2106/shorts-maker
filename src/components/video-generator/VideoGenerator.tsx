@@ -226,36 +226,42 @@ export default function VideoGenerator() {
         setProgress(0);
         setStageDescription("Retrying...");
         setResult(null);
+
+        // Get API keys
         const savedKeys = localStorage.getItem("api-keys");
         const apiKeys = savedKeys ? JSON.parse(savedKeys) : null;
 
-        const response = (await generateVideo({
+        // Call generate API with the same parameters
+        const response = await generateVideo({
           idea: lastItem.idea,
           format: lastItem.format,
           tts_model: lastItem.tts_model || "edge",
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          voice: lastItem.voice as any,
+          voice: lastItem.voice || "vi-VN-NamMinhNeural",
           api_keys: apiKeys,
-        })) as GenerateInitialResponse;
+        });
 
-        // Set current request ID
-        currentRequestIdRef.current = response.request_id;
-
-        // Update history
-        setHistory((prevHistory) =>
-          prevHistory.map((item, index) =>
-            index === 0
-              ? {
-                  ...item,
-                  id: response.request_id,
-                  status: "generating_content",
-                  timestamp: new Date(),
-                }
-              : item
-          )
+        // Update history with the new request ID
+        const updatedHistory = history.map((item, index) =>
+          index === 0
+            ? {
+                ...item,
+                id: response.request_id,
+                status: "generating_content" as GenerationStatus,
+                timestamp: new Date(),
+              }
+            : item
         );
+        setHistory(updatedHistory);
+        saveHistoryToLocalStorage(updatedHistory);
 
-        // Start polling for status
+        // Start polling for status with the new request ID
+        currentRequestIdRef.current = response.request_id;
+        currentHistoryItemRef.current = {
+          ...lastItem,
+          id: response.request_id,
+          status: "generating_content" as GenerationStatus,
+          timestamp: new Date(),
+        };
         checkStatus(response.request_id);
       } catch (err) {
         console.log("Error retrying:", err);

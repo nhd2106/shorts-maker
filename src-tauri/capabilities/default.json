@@ -1,0 +1,34 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "enables the default permissions",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "binaries/my-sidecar",
+          "sidecar": true
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-app-write",
+      "allow": [
+        {
+          "path": "$DOWNLOAD_DIR"
+        }
+      ]
+    },
+    "shell:allow-open",
+    "fs:default",
+    "fs:allow-read",
+    "dialog:default",
+    "fs:allow-write",
+    "fs:allow-create",
+    "fs:allow-rename",
+    "shell:allow-spawn"
+  ]
+}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, Copy, Hash, Check } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -8,62 +8,22 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 interface ScriptContentProps {
-  content: {
-    filename: string;
-    url: string;
-  };
+  title: string;
+  script: string;
+  hashtags: string[];
 }
 
-export default function ScriptContent({ content }: ScriptContentProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export default function ScriptContent({
+  title,
+  script,
+  hashtags,
+}: ScriptContentProps) {
   const [copied, setCopied] = useState({
     title: false,
     script: false,
     tags: false,
   });
-  const [parsedContent, setParsedContent] = useState<{
-    title: string;
-    script: string;
-    hashtags: string[];
-  } | null>(null);
-
-  useEffect(() => {
-    const fetchContent = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        if (!content.url) {
-          throw new Error("No content URL provided");
-        }
-
-        const response = await fetch(content.url);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch content: ${response.statusText}`);
-        }
-
-        const text = await response.text();
-
-        const parsed = parseContent(text);
-
-        if (!parsed) {
-          throw new Error("Failed to parse content");
-        }
-
-        setParsedContent(parsed);
-      } catch (err) {
-        console.log("Error fetching content:", err);
-        setError(err instanceof Error ? err.message : "Failed to load content");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (content.url) {
-      fetchContent();
-    }
-  }, [content?.url]);
+  console.log(title, script, hashtags);
 
   const handleCopy = async (
     text: string,
@@ -82,7 +42,7 @@ export default function ScriptContent({ content }: ScriptContentProps) {
     }
   };
 
-  if (isLoading) {
+  if (!title || !script || !hashtags) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-3/4" />
@@ -96,17 +56,19 @@ export default function ScriptContent({ content }: ScriptContentProps) {
     );
   }
 
-  if (error) {
+  if (!title || !script || !hashtags) {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
+        <AlertDescription>
+          No content available. Please try again.
+        </AlertDescription>
       </Alert>
     );
   }
 
-  if (!parsedContent) {
+  if (!title || !script || !hashtags) {
     return (
       <div className="flex min-h-[200px] flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
         <p className="text-sm text-muted-foreground">No content available</p>
@@ -116,17 +78,13 @@ export default function ScriptContent({ content }: ScriptContentProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="font-semibold">{parsedContent.title}</h3>
-          <p className="text-sm text-muted-foreground">Generated Script</p>
-        </div>
+      <div className=" gap-4">
         <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
             className="gap-2"
-            onClick={() => handleCopy(parsedContent.title, "title")}
+            onClick={() => handleCopy(title, "title")}
           >
             {copied.title ? (
               <Check className="h-4 w-4" />
@@ -139,7 +97,7 @@ export default function ScriptContent({ content }: ScriptContentProps) {
             variant="outline"
             size="sm"
             className="gap-2"
-            onClick={() => handleCopy(parsedContent.script, "script")}
+            onClick={() => handleCopy(script, "script")}
           >
             {copied.script ? (
               <Check className="h-4 w-4" />
@@ -152,7 +110,7 @@ export default function ScriptContent({ content }: ScriptContentProps) {
             variant="outline"
             size="sm"
             className="gap-2"
-            onClick={() => handleCopy(parsedContent.hashtags.join(" "), "tags")}
+            onClick={() => handleCopy(hashtags.join(" "), "tags")}
           >
             {copied.tags ? (
               <Check className="h-4 w-4" />
@@ -161,21 +119,28 @@ export default function ScriptContent({ content }: ScriptContentProps) {
             )}
             Copy Tags
           </Button>
+          <Button variant="outline" size="sm" className="gap-2">
+            Upload to Youtube
+          </Button>
+        </div>
+        <div className="flex flex-col gap-2">
+          <h3 className="font-semibold">{title}</h3>
         </div>
       </div>
 
+      <p className="text-sm text-muted-foreground">Generated Script</p>
       <Card className="p-4">
-        <p className="whitespace-pre-wrap text-sm">{parsedContent.script}</p>
+        <p className="whitespace-pre-wrap text-sm">{script}</p>
       </Card>
 
-      {parsedContent.hashtags.length > 0 && (
+      {hashtags.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Hash className="h-4 w-4" />
             <span>Hashtags</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {parsedContent.hashtags.map((tag, index) => (
+            {hashtags.map((tag, index) => (
               <Badge
                 key={index}
                 variant="secondary"
@@ -190,44 +155,4 @@ export default function ScriptContent({ content }: ScriptContentProps) {
       )}
     </div>
   );
-}
-
-function parseContent(content: string) {
-  try {
-    // Remove any BOM characters that might be present
-    content = content.replace(/^\uFEFF/, "");
-
-    // Split content by newlines and filter out empty lines
-    const lines = content.split("\n").filter((line) => line.trim());
-
-    if (lines.length === 0) {
-      throw new Error("Content is empty");
-    }
-
-    // First non-empty line is the title
-    const title = lines[0].trim();
-
-    // Find hashtags (they usually start with #)
-    const hashtagLine = lines.find((line) => line.includes("#")) || "";
-    const hashtags = hashtagLine
-      .split(" ")
-      .filter((word) => word.startsWith("#"))
-      .map((tag) => tag.trim());
-
-    // Everything between title and hashtags is the script
-    const scriptLines = lines
-      .slice(1, hashtags.length > 0 ? lines.indexOf(hashtagLine) : undefined)
-      .filter((line) => line.trim() && !line.includes("#"));
-
-    const script = scriptLines.join("\n").trim();
-
-    return {
-      title,
-      script,
-      hashtags: hashtags.length > 0 ? hashtags : [],
-    };
-  } catch (err) {
-    console.log("Error parsing content:", err);
-    return null;
-  }
 }

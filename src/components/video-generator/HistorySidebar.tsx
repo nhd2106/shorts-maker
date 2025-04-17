@@ -1,7 +1,7 @@
 import { HistoryItem } from "@/types/video-generator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
-import { Trash2, Settings, PanelLeft, AlertCircle } from "lucide-react";
+import { Trash2, PanelLeft, AlertCircle } from "lucide-react";
 import { motion } from "motion/react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
@@ -9,35 +9,13 @@ import {
   loadHistoryFromLocalStorage,
   saveHistoryToLocalStorage,
 } from "@/utils/local-storage";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-
-type ApiKeys = {
-  openai: string;
-  together: string;
-  elevenlabs: string;
-};
-
+import { deleteVideo } from "@/api";
+import ApisConfig from "./ApisConfig";
+import "./style.css";
 export function HistorySidebar() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [apiKeys, setApiKeys] = useState<ApiKeys>(() => {
-    const savedKeys = localStorage.getItem("api-keys");
-    return savedKeys
-      ? JSON.parse(savedKeys)
-      : {
-          openai: "",
-          together: "",
-          elevenlabs: "",
-        };
-  });
+
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -75,8 +53,9 @@ export function HistorySidebar() {
     navigate(`/${item.id}`);
   };
 
-  const onDeleteHistoryItem = (itemId: string, e: React.MouseEvent) => {
+  const onDeleteHistoryItem = async (itemId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    await deleteVideo(itemId);
     const newHistory = history.filter((item) => item.id !== itemId);
     setHistory(newHistory);
     saveHistoryToLocalStorage(newHistory);
@@ -89,11 +68,10 @@ export function HistorySidebar() {
     }
   };
 
-  const handleSaveApiKeys = () => {
-    localStorage.setItem("api-keys", JSON.stringify(apiKeys));
-  };
+  const savedApiKeys = localStorage.getItem("api-keys") || "{}";
+  const apiKeys = savedApiKeys ? JSON.parse(savedApiKeys) : null;
 
-  const missingRequiredKeys = !apiKeys.openai || !apiKeys.together;
+  const missingRequiredKeys = !apiKeys?.openai || !apiKeys?.together;
 
   return (
     <div
@@ -131,14 +109,14 @@ export function HistorySidebar() {
       {!isCollapsed && (
         <>
           <div className="flex-1 min-h-0">
-            <ScrollArea className="h-full">
+            <ScrollArea className="h-full scrollarea">
               <div className="p-4 space-y-4">
                 {history.map((item) => (
                   <motion.div
                     key={item.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-4 rounded-lg border border-gray-200 dark:border-gray-800 hover:border-purple-500 dark:hover:border-purple-500 cursor-pointer transition-all bg-white dark:bg-gray-800 group relative"
+                    className="p-4 rounded-lg w-full border border-gray-200 dark:border-gray-800 hover:border-purple-500 dark:hover:border-purple-500 cursor-pointer transition-all bg-white dark:bg-gray-800 group relative"
                     onClick={() => onHistoryItemClick(item)}
                   >
                     <div className="space-y-2">
@@ -148,7 +126,7 @@ export function HistorySidebar() {
                         </p>
                         <button
                           onClick={(e) => onDeleteHistoryItem(item.id, e)}
-                          className="text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                          className="text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 absolute top-2 right-2"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -185,64 +163,7 @@ export function HistorySidebar() {
               </div>
             </ScrollArea>
           </div>
-          <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-800">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full flex items-center gap-2"
-                >
-                  <Settings className="w-4 h-4" />
-                  Configure API Keys
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>API Configuration</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="openai">OpenAI API Key</Label>
-                    <Input
-                      id="openai"
-                      type="password"
-                      value={apiKeys.openai}
-                      onChange={(e) =>
-                        setApiKeys({ ...apiKeys, openai: e.target.value })
-                      }
-                      placeholder="sk-..."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="together">Together AI API Key</Label>
-                    <Input
-                      id="together"
-                      type="password"
-                      value={apiKeys.together}
-                      onChange={(e) =>
-                        setApiKeys({ ...apiKeys, together: e.target.value })
-                      }
-                      placeholder="tok-..."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="elevenlabs">ElevenLabs API Key</Label>
-                    <Input
-                      id="elevenlabs"
-                      type="password"
-                      value={apiKeys.elevenlabs}
-                      onChange={(e) =>
-                        setApiKeys({ ...apiKeys, elevenlabs: e.target.value })
-                      }
-                    />
-                  </div>
-                  <Button onClick={handleSaveApiKeys} className="w-full">
-                    Save API Keys
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <ApisConfig />
         </>
       )}
     </div>

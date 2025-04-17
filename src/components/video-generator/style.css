@@ -1,0 +1,5 @@
+.scrollarea {
+  div:first-child {
+    display: block !important;
+  }
+}

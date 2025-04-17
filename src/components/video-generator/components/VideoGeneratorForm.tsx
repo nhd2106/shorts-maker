@@ -12,30 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Wand2, Sparkles } from "lucide-react";
 import { FormatSelector } from "./FormatSelector";
 import { VoiceSelector } from "./VoiceSelector";
-
-const formSchema = z.object({
-  idea: z.string().min(10, "Idea must be at least 10 characters long"),
-  videoFormat: z.enum(["shorts", "normal"], {
-    required_error: "Please select a video format",
-  }),
-  voiceModel: z.enum(["edge", "elevenlabs", "openai", "google", "vixtts"], {
-    required_error: "Please select a voice model",
-  }),
-  voice: z.enum([
-    "vi-VN-NamMinhNeural",
-    "vi-VN-ThanhMinhNeural",
-    "vi-VN-ThuyTrangNeural",
-    "alloy",
-    "nova",
-    "shimmer",
-    "echo",
-    "fable",
-    "vivos",
-    "WVkYyTxxVgMOsw1IIVL0",
-    "7hsfEc7irDn6E8br0qfw",
-    "t1LUnfTt7pXaYjubT04d", // DUOC
-  ]),
-});
+import { useElevenLabsVoices } from "@/queries/elevenlabs";
 
 interface VideoGeneratorFormProps {
   onSubmit: (data: FormData) => Promise<void>;
@@ -50,6 +27,31 @@ export function VideoGeneratorForm({
   status,
   setSelectedFormat,
 }: VideoGeneratorFormProps) {
+  const localApiKeys = localStorage.getItem("api-keys");
+  const apiKeys = localApiKeys ? JSON.parse(localApiKeys) : {};
+
+  const { data: voices } = useElevenLabsVoices(apiKeys.elevenlabs);
+  const formSchema = z.object({
+    idea: z.string().min(10, "Idea must be at least 10 characters long"),
+    videoFormat: z.enum(["shorts", "normal"], {
+      required_error: "Please select a video format",
+    }),
+    voiceModel: z.enum(["edge", "elevenlabs", "openai", "google", "vixtts"], {
+      required_error: "Please select a voice model",
+    }),
+    voice: z.enum([
+      "vi-VN-NamMinhNeural",
+      "vi-VN-ThanhMinhNeural",
+      "vi-VN-ThuyTrangNeural",
+      "alloy",
+      "nova",
+      "shimmer",
+      "echo",
+      "fable",
+      "vivos",
+      ...(voices?.voices.map((voice: any) => voice.voice_id) || []),
+    ]),
+  });
   const {
     register,
     handleSubmit,
@@ -149,6 +151,7 @@ export function VideoGeneratorForm({
         selectedVoice={selectedVoice}
         onModelSelect={handleModelSelect}
         onVoiceSelect={handleVoiceSelect}
+        elevenlabsVoices={voices?.voices}
       />
 
       <div className="flex gap-4">

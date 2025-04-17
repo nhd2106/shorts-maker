@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { getAvailableModels } from "@/api";
 import {
@@ -30,6 +31,7 @@ interface VoiceSelectorProps {
   onVoiceSelect: (voice: string) => void;
   selectedModel: string;
   selectedVoice: string;
+  elevenlabsVoices: any;
 }
 
 export function VoiceSelector({
@@ -37,8 +39,8 @@ export function VoiceSelector({
   onVoiceSelect,
   selectedModel,
   selectedVoice,
+  elevenlabsVoices,
 }: VoiceSelectorProps) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [models, setModels] = useState<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(
@@ -52,7 +54,6 @@ export function VoiceSelector({
   const handlePreview = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!audioElement) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const voices = sampleVoices?.[
         selectedModel as keyof typeof sampleVoices
       ] as any;
@@ -117,13 +118,19 @@ export function VoiceSelector({
               <SelectValue placeholder="Select voice" />
             </SelectTrigger>
             <SelectContent>
-              {models &&
-                selectedModel &&
-                models[selectedModel].voices.map((voice: string) => (
-                  <SelectItem key={voice} value={voice}>
-                    {voice}
-                  </SelectItem>
-                ))}
+              {selectedModel === "elevenlabs"
+                ? elevenlabsVoices.map((voice: any) => (
+                    <SelectItem key={voice.voice_id} value={voice.voice_id}>
+                      {voice.name}
+                    </SelectItem>
+                  ))
+                : models &&
+                  selectedModel &&
+                  models[selectedModel].voices.map((voice: string) => (
+                    <SelectItem key={voice} value={voice}>
+                      {voice}
+                    </SelectItem>
+                  ))}
             </SelectContent>
           </Select>
         </div>

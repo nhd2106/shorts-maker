@@ -1,9 +1,9 @@
 import VideoGenerator from "@/components/video-generator/VideoGenerator";
 
-export const Home = () => {
+export default function Home() {
   return (
     <div>
       <VideoGenerator />
     </div>
   );
-};
+}

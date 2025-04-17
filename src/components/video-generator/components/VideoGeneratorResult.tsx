@@ -6,15 +6,75 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { motion } from "motion/react";
-import { AlertCircle, RefreshCcw } from "lucide-react";
+import { AlertCircle, RefreshCcw, Loader2 } from "lucide-react";
 import { getDownloadUrl } from "@/api";
-import { RefreshCw, Video, FileText, Image as ImageIcon } from "lucide-react";
+import { Video, FileText, Image as ImageIcon } from "lucide-react";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { BaseDirectory, downloadDir } from "@tauri-apps/api/path";
+import { save } from "@tauri-apps/plugin-dialog";
+import { writeFile } from "@tauri-apps/plugin-fs";
+import { join } from "@tauri-apps/api/path";
+
+function parseContent(content: string) {
+  try {
+    // Remove any BOM characters that might be present
+    content = content.replace(/^\uFEFF/, "");
+
+    // Split content by newlines and filter out empty lines
+    const lines = content.split("\n").filter((line) => line.trim());
+
+    if (lines.length === 0) {
+      throw new Error("Content is empty");
+    }
+
+    // Find the title line (starts with "title:")
+    const titleLine = lines.find((line) =>
+      line.toLowerCase().startsWith("title:")
+    );
+    if (!titleLine) {
+      throw new Error("No title found");
+    }
+    const title = titleLine.substring("title:".length).trim();
+
+    // Find the script section (starts with "script:")
+    const scriptStartIndex = lines.findIndex((line) =>
+      line.toLowerCase().startsWith("script:")
+    );
+    if (scriptStartIndex === -1) {
+      throw new Error("No script found");
+    }
+
+    // Get all lines after "script:" until the end or until hashtags
+    const scriptLines = lines
+      .slice(scriptStartIndex + 1)
+      .filter((line) => line.trim() && !line.includes("#"));
+
+    const script = scriptLines.join("\n").trim();
+
+    // Find hashtags if any
+    const hashtagLine = lines.find((line) => line.includes("#")) || "";
+    const hashtags = hashtagLine
+      .split(" ")
+      .filter((word) => word.startsWith("#"))
+      .map((tag) => tag.trim());
+
+    return {
+      title,
+      script,
+      hashtags: hashtags.length > 0 ? hashtags : [],
+    };
+  } catch (err) {
+    console.log("Error parsing content:", err);
+    return null;
+  }
+}
 
 interface VideoGeneratorResultProps {
   status: GenerationStatus;
   error: string | null;
-  result: GenerateResponse | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  result: GenerateResponse | any;
   progress: number;
   stageDescription: string;
   onRetry: () => void;
@@ -31,40 +91,75 @@ export function VideoGeneratorResult({
   selectedFormat,
 }: VideoGeneratorResultProps) {
   const [title, setTitle] = useState("video");
+  const [isRetrying, setIsRetrying] = useState(false);
+  console.log(result);
+
+  useEffect(() => {
+    // Reset retrying state when status changes
+    if (status !== "failed") {
+      setIsRetrying(false);
+    }
+  }, [status]);
 
   useEffect(() => {
     const fetchTitle = async () => {
       try {
         if (result?.content?.url && status === "completed") {
-          const response = await fetch(result.content.url);
+          const response = await fetch(getDownloadUrl(result.content.url));
           const text = await response.text();
-          const firstLine = text.split("\n")[0].trim();
-          setTitle(
-            firstLine
-              .toLowerCase()
-              .replace(/[^a-z0-9-\s]/g, "")
-              .replace(/\s+/g, "-") || "video"
-          );
+          const parsed = parseContent(text);
+          if (parsed) {
+            setTitle(parsed.title);
+          }
         }
       } catch (err) {
         console.error("Error fetching title:", err);
+        setTitle("video");
       }
     };
     fetchTitle();
   }, [result?.content?.url, status]);
 
   const handleDownload = async (url: string, filename?: string) => {
-    const link = document.createElement("a");
-    link.href = getDownloadUrl(url);
-    if (filename) {
-      link.download = filename;
+    try {
+      if (!filename) return;
+
+      const response = await fetch(getDownloadUrl(url));
+      const blob = await response.blob();
+      const arrayBuffer = await blob.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      const path = await save({
+        defaultPath: await downloadDir(),
+        title: "Save File",
+        filters: [
+          {
+            name: filename,
+            extensions: [".mp4"],
+          },
+        ],
+      });
+      if (!path) return;
+      const filePath = await join(path, "video-generator");
+      await writeFile(filePath, uint8Array, {
+        baseDir: BaseDirectory.Download,
+      })
+        .then(() => {
+          toast.success(`Successfully downloaded ${filename} to Desktop`);
+        })
+        .catch((err) => {
+          console.error("Download error:", err);
+          toast.error(`Failed to download ${filename}`);
+        });
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error(`Failed to download ${filename}`);
     }
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
-  // console.log(status, error);
+  const handleRetry = () => {
+    setIsRetrying(true);
+    onRetry();
+  };
 
   if (error) {
     return (
@@ -74,16 +169,31 @@ export function VideoGeneratorResult({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
+        <Alert variant="destructive" className="flex items-start gap-2">
+          <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+          <div className="space-y-2">
+            <p className="font-medium">Generation Failed</p>
+            <AlertDescription className="text-sm">{error}</AlertDescription>
+          </div>
         </Alert>
         <div className="flex gap-2">
-          {onRetry && (
-            <Button onClick={onRetry} className="gap-2">
-              <RefreshCw className="w-4 h-4" />
-              Try Again
-            </Button>
-          )}
+          <Button
+            onClick={handleRetry}
+            className="gap-2"
+            disabled={isRetrying || status === "generating_content"}
+          >
+            {isRetrying ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Retrying...
+              </>
+            ) : (
+              <>
+                <RefreshCcw className="w-4 h-4" />
+                Try Again
+              </>
+            )}
+          </Button>
         </div>
       </motion.div>
     );
@@ -114,12 +224,9 @@ export function VideoGeneratorResult({
             {result.content && (
               <Card className="p-4 h-full overflow-y-auto max-h-[600px]">
                 <ScriptContent
-                  content={{
-                    filename: result.content.filename,
-                    url: result.content.url.startsWith("http")
-                      ? result.content.url
-                      : getDownloadUrl(result.content.url),
-                  }}
+                  title={title}
+                  script={result.content.script}
+                  hashtags={result.content.hashtags}
                 />
                 <Button
                   onClick={() =>
@@ -198,19 +305,38 @@ export function VideoGeneratorResult({
 
   if (status === "failed" && error) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-start gap-4 text-destructive">
-          <AlertCircle className="w-5 h-5 mt-0.5" />
+      <motion.div
+        className="space-y-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <Alert variant="destructive" className="flex items-start gap-2">
+          <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
           <div className="space-y-2">
             <p className="font-medium">Generation Failed</p>
-            <p className="text-sm text-muted-foreground">{error}</p>
+            <AlertDescription className="text-sm">{error}</AlertDescription>
           </div>
-        </div>
-        <Button onClick={onRetry} variant="outline" className="gap-2">
-          <RefreshCcw className="w-4 h-4" />
-          Retry Generation
+        </Alert>
+        <Button
+          onClick={handleRetry}
+          variant="outline"
+          className="gap-2"
+          disabled={isRetrying}
+        >
+          {isRetrying ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Retrying...
+            </>
+          ) : (
+            <>
+              <RefreshCcw className="w-4 h-4" />
+              Retry Generation
+            </>
+          )}
         </Button>
-      </div>
+      </motion.div>
     );
   }
 
