@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Skeleton } from "./ui/skeleton";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "./ui/alert";
-
+import axios from "axios";
 interface VideoPlayerProps {
   src: string;
   poster?: string;
@@ -36,13 +36,11 @@ export default function VideoPlayer({
 
     const fetchVideoBlob = async () => {
       try {
-        const response = await fetch(src);
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch video: ${response.status} ${response.statusText}`
-          );
-        }
-        const blob = await response.blob();
+        const response = await axios.get(src, {
+          responseType: "blob",
+        });
+
+        const blob = response.data;
         currentBlobUrl = URL.createObjectURL(blob);
         setBlobUrl(currentBlobUrl);
         setIsLoading(false);
