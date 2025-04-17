@@ -1,8 +1,6 @@
-import { useEffect, useState, Suspense, lazy, useRef } from "react";
+import { Suspense, lazy } from "react";
 import { Route, Routes } from "react-router";
-import { toast } from "sonner";
 import Layout from "./screens/Layout";
-import { startSidecarAction, shutdownSidecarAction } from "./api";
 import Loading from "./screens/Loading";
 
 const Workload = lazy(() => import("./screens/Workload"));

@@ -9,66 +9,8 @@ import { motion } from "motion/react";
 import { AlertCircle, RefreshCcw, Loader2 } from "lucide-react";
 import { getDownloadUrl } from "@/api";
 import { Video, FileText, Image as ImageIcon } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { BaseDirectory, downloadDir } from "@tauri-apps/api/path";
-import { save } from "@tauri-apps/plugin-dialog";
-import { writeFile } from "@tauri-apps/plugin-fs";
-import { join } from "@tauri-apps/api/path";
-
-function parseContent(content: string) {
-  try {
-    // Remove any BOM characters that might be present
-    content = content.replace(/^\uFEFF/, "");
-
-    // Split content by newlines and filter out empty lines
-    const lines = content.split("\n").filter((line) => line.trim());
-
-    if (lines.length === 0) {
-      throw new Error("Content is empty");
-    }
-
-    // Find the title line (starts with "title:")
-    const titleLine = lines.find((line) =>
-      line.toLowerCase().startsWith("title:")
-    );
-    if (!titleLine) {
-      throw new Error("No title found");
-    }
-    const title = titleLine.substring("title:".length).trim();
-
-    // Find the script section (starts with "script:")
-    const scriptStartIndex = lines.findIndex((line) =>
-      line.toLowerCase().startsWith("script:")
-    );
-    if (scriptStartIndex === -1) {
-      throw new Error("No script found");
-    }
-
-    // Get all lines after "script:" until the end or until hashtags
-    const scriptLines = lines
-      .slice(scriptStartIndex + 1)
-      .filter((line) => line.trim() && !line.includes("#"));
-
-    const script = scriptLines.join("\n").trim();
-
-    // Find hashtags if any
-    const hashtagLine = lines.find((line) => line.includes("#")) || "";
-    const hashtags = hashtagLine
-      .split(" ")
-      .filter((word) => word.startsWith("#"))
-      .map((tag) => tag.trim());
-
-    return {
-      title,
-      script,
-      hashtags: hashtags.length > 0 ? hashtags : [],
-    };
-  } catch (err) {
-    console.log("Error parsing content:", err);
-    return null;
-  }
-}
 
 interface VideoGeneratorResultProps {
   status: GenerationStatus;
@@ -92,6 +34,7 @@ export function VideoGeneratorResult({
 }: VideoGeneratorResultProps) {
   const [title, setTitle] = useState("video");
   const [isRetrying, setIsRetrying] = useState(false);
+  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   console.log(result);
 
   useEffect(() => {
@@ -102,14 +45,13 @@ export function VideoGeneratorResult({
   }, [status]);
 
   useEffect(() => {
+    console.log("called");
     const fetchTitle = async () => {
       try {
-        if (result?.content?.url && status === "completed") {
-          const response = await fetch(getDownloadUrl(result.content.url));
-          const text = await response.text();
-          const parsed = parseContent(text);
-          if (parsed) {
-            setTitle(parsed.title);
+        if (result?.content) {
+          console.log(result.content);
+          if (result.content.title) {
+            setTitle(result.content.title);
           }
         }
       } catch (err) {
@@ -118,42 +60,66 @@ export function VideoGeneratorResult({
       }
     };
     fetchTitle();
-  }, [result?.content?.url, status]);
+  }, [result, status]);
 
-  const handleDownload = async (url: string, filename?: string) => {
+  const handleVideoBlobReady = useCallback((blob: Blob) => {
+    console.log("Video blob received in parent:", blob);
+    setVideoBlob(blob);
+  }, []);
+
+  const triggerDownload = (blob: Blob, filename: string) => {
+    let blobUrl: string | null = null;
     try {
-      if (!filename) return;
-
-      const response = await fetch(getDownloadUrl(url));
-      const blob = await response.blob();
-      const arrayBuffer = await blob.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-      const path = await save({
-        defaultPath: await downloadDir(),
-        title: "Save File",
-        filters: [
-          {
-            name: filename,
-            extensions: [".mp4"],
-          },
-        ],
-      });
-      if (!path) return;
-      const filePath = await join(path, "video-generator");
-      await writeFile(filePath, uint8Array, {
-        baseDir: BaseDirectory.Download,
-      })
-        .then(() => {
-          toast.success(`Successfully downloaded ${filename} to Desktop`);
-        })
-        .catch((err) => {
-          console.error("Download error:", err);
-          toast.error(`Failed to download ${filename}`);
-        });
+      blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success(`Successfully downloaded ${filename}`);
     } catch (error) {
-      console.error("Download error:", error);
-      toast.error(`Failed to download ${filename}`);
+      console.error("Download trigger error:", error);
+      toast.error(
+        `Failed to download ${filename}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    } finally {
+      if (blobUrl) {
+        window.URL.revokeObjectURL(blobUrl);
+      }
     }
+  };
+
+  const handleUrlDownload = async (url: string, filename: string) => {
+    toast.info(`Starting download for ${filename}...`);
+    try {
+      const response = await fetch(getDownloadUrl(url));
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const blob = await response.blob();
+      triggerDownload(blob, filename);
+    } catch (error) {
+      console.error("URL Download error:", error);
+      toast.error(
+        `Failed to download ${filename}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  };
+
+  const handleVideoDownload = () => {
+    if (!videoBlob) {
+      toast.error("Video data is not ready yet. Please wait.");
+      console.error("Video download attempted before blob was ready.");
+      return;
+    }
+    const filename = `${title}.mp4`;
+    toast.info(`Starting download for ${filename}...`);
+    triggerDownload(videoBlob, filename);
   };
 
   const handleRetry = () => {
@@ -200,6 +166,16 @@ export function VideoGeneratorResult({
   }
 
   if (result && status === "completed") {
+    const videoUrl = result.video.url.startsWith("http")
+      ? result.video.url
+      : getDownloadUrl(result.video.url);
+
+    const thumbnailUrl = result.thumbnail?.url.startsWith("http")
+      ? result.thumbnail.url
+      : result.thumbnail?.url
+      ? getDownloadUrl(result.thumbnail.url)
+      : undefined;
+
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -212,13 +188,7 @@ export function VideoGeneratorResult({
               selectedFormat === "shorts" ? "aspect-[9/16]" : "aspect-[16/9]"
             }`}
           >
-            <VideoPlayer
-              src={
-                result.video.url.startsWith("http")
-                  ? result.video.url
-                  : getDownloadUrl(result.video.url)
-              }
-            />
+            <VideoPlayer src={videoUrl} onBlobReady={handleVideoBlobReady} />
           </div>
           <div className="space-y-4">
             {result.content && (
@@ -230,25 +200,21 @@ export function VideoGeneratorResult({
                 />
                 <Button
                   onClick={() =>
-                    handleDownload(result.content.url, `${title}.txt`)
+                    handleUrlDownload(result.content.url, `${title}.txt`)
                   }
                   variant="outline"
-                  className="w-full gap-2"
+                  className="w-full gap-2 mt-4"
                 >
                   <FileText className="w-4 h-4" />
                   Download Script
                 </Button>
               </Card>
             )}
-            {result.thumbnail && (
+            {result.thumbnail && thumbnailUrl && (
               <Card className="p-4 space-y-4">
                 <div className="aspect-video rounded-lg overflow-hidden bg-muted">
                   <img
-                    src={
-                      result.thumbnail.url.startsWith("http")
-                        ? result.thumbnail.url
-                        : getDownloadUrl(result.thumbnail.url)
-                    }
+                    src={thumbnailUrl}
                     alt="Thumbnail"
                     className="w-full h-full object-cover"
                     width={500}
@@ -257,7 +223,7 @@ export function VideoGeneratorResult({
                 </div>
                 <Button
                   onClick={() =>
-                    handleDownload(
+                    handleUrlDownload(
                       result.thumbnail.url,
                       `${title}-thumbnail.jpg`
                     )
@@ -273,8 +239,9 @@ export function VideoGeneratorResult({
           </div>
         </div>
         <Button
-          onClick={() => handleDownload(result.video.url, `${title}.mp4`)}
+          onClick={handleVideoDownload}
           className="w-full gap-2"
+          disabled={!videoBlob}
         >
           <Video className="w-4 h-4" />
           Download Video

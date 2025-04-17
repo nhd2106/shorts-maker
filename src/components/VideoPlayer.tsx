@@ -7,50 +7,66 @@ interface VideoPlayerProps {
   src: string;
   poster?: string;
   format?: string;
+  onBlobReady?: (blob: Blob) => void;
 }
 
 export default function VideoPlayer({
   src,
   poster,
   format = "shorts",
+  onBlobReady,
 }: VideoPlayerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!src) return;
-
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleCanPlay = () => {
+    if (!src) {
       setIsLoading(false);
-      setError(null);
+      setError("No video source provided");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setBlobUrl(null);
+
+    let currentBlobUrl: string | null = null;
+
+    const fetchVideoBlob = async () => {
+      try {
+        const response = await fetch(src);
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch video: ${response.status} ${response.statusText}`
+          );
+        }
+        const blob = await response.blob();
+        currentBlobUrl = URL.createObjectURL(blob);
+        setBlobUrl(currentBlobUrl);
+        setIsLoading(false);
+        if (onBlobReady) {
+          onBlobReady(blob);
+        }
+      } catch (err) {
+        console.error("Error fetching video blob:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to load video data"
+        );
+        setIsLoading(false);
+      }
     };
 
-    const handleError = (e: Event) => {
-      const videoError = (e.target as HTMLVideoElement).error;
-      setIsLoading(false);
-      setError(
-        videoError
-          ? `Failed to load video: ${videoError.message}`
-          : "Failed to load video"
-      );
-      console.log("Video error:", videoError);
-    };
-
-    video.addEventListener("canplay", handleCanPlay);
-    video.addEventListener("error", handleError);
-
-    // Reset video when src changes
-    video.load();
+    fetchVideoBlob();
 
     return () => {
-      video.removeEventListener("canplay", handleCanPlay);
-      video.removeEventListener("error", handleError);
+      if (currentBlobUrl) {
+        URL.revokeObjectURL(currentBlobUrl);
+        console.log("Revoked Blob URL:", currentBlobUrl);
+      }
     };
-  }, [src]);
+  }, [src, onBlobReady]);
 
   const handleVideoClick = () => {
     if (videoRef.current) {
@@ -63,7 +79,7 @@ export default function VideoPlayer({
   };
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full bg-black">
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center">
           <Skeleton className="w-full h-full absolute" />
@@ -71,29 +87,32 @@ export default function VideoPlayer({
         </div>
       )}
 
-      {error && (
+      {error && !isLoading && (
         <Alert
           variant="destructive"
-          className="absolute top-0 left-0 right-0 z-10"
+          className="absolute top-4 left-4 right-4 z-10 max-w-md mx-auto"
         >
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      <video
-        ref={videoRef}
-        className={`w-full h-full ${
-          format === "normal" ? "aspect-video" : "aspect-[9/16]"
-        } object-contain bg-black`}
-        poster={poster}
-        controls
-        playsInline
-        onClick={handleVideoClick}
-      >
-        <source src={src} type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
+      {blobUrl && !isLoading && (
+        <video
+          key={blobUrl}
+          ref={videoRef}
+          className={`w-full h-full ${
+            format === "normal" ? "aspect-video" : "aspect-[9/16]"
+          } object-contain`}
+          poster={poster}
+          controls
+          playsInline
+          onClick={handleVideoClick}
+        >
+          <source src={blobUrl} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      )}
     </div>
   );
 }

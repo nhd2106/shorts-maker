@@ -23,7 +23,6 @@ export default function ScriptContent({
     script: false,
     tags: false,
   });
-  console.log(title, script, hashtags);
 
   const handleCopy = async (
     text: string,
