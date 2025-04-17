@@ -189,6 +189,14 @@ export function VideoGeneratorResult({
             }`}
           >
             <VideoPlayer src={videoUrl} onBlobReady={handleVideoBlobReady} />
+            <Button
+              onClick={handleVideoDownload}
+              className="gap-2 w-full mt-5"
+              disabled={!videoBlob}
+            >
+              <Video className="w-4 h-4" />
+              Download Video
+            </Button>
           </div>
           <div className="space-y-4">
             {result.content && (
@@ -238,14 +246,6 @@ export function VideoGeneratorResult({
             )}
           </div>
         </div>
-        <Button
-          onClick={handleVideoDownload}
-          className="w-full gap-2"
-          disabled={!videoBlob}
-        >
-          <Video className="w-4 h-4" />
-          Download Video
-        </Button>
       </motion.div>
     );
   }
