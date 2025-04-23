@@ -76,7 +76,7 @@ export function getDownloadUrl(path: string): string {
     return path; // In dev, just use the path as-is which will go through proxy
   }
   // For production on Vercel
-  return `${window.location.origin}${path}`;
+  return path;
 }
 
 export async function getAvailableModels() {
