@@ -6,7 +6,9 @@ import axios from "axios";
 
 // const message = "tauri";
 
-const API_BASE_URL = "https://shorts.duoc95.com";
+export const API_BASE_URL = "https://shorts.duoc95.com";
+// export const API_BASE_URL = "http://localhost:5123";
+// const API_BASE_URL = ""; // Empty base URL will use relative paths, working with the Vite proxy
 
 // Create axios instance with default config
 const api = axios.create({
@@ -69,7 +71,12 @@ export async function checkGenerationStatus(
 }
 
 export function getDownloadUrl(path: string): string {
-  return `${API_BASE_URL}${path}`;
+  // For development with proxy
+  if (import.meta.env.DEV) {
+    return path; // In dev, just use the path as-is which will go through proxy
+  }
+  // For production on Vercel
+  return `${window.location.origin}${path}`;
 }
 
 export async function getAvailableModels() {
@@ -107,7 +114,7 @@ export async function prepareVideoData(data: {
     | "vivos";
 }): Promise<GenerateInitialResponse> {
   try {
-    const { data: response } = await api.post("/api/prepare-video-data", {
+    const { data: response } = await api.post("/api/prepare", {
       ...data,
       video_format: data.video_format || "shorts",
       tts_model: data.tts_model || "edge",

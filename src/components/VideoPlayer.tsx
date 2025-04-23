@@ -36,14 +36,13 @@ export default function VideoPlayer({
 
     const fetchVideoBlob = async () => {
       try {
-        const response = await axios.get(src, {
+        const response = await axios.get(`http://localhost:5123${src}`, {
           responseType: "blob",
         });
 
         const blob = response.data;
         currentBlobUrl = URL.createObjectURL(blob);
         setBlobUrl(currentBlobUrl);
-        setIsLoading(false);
         if (onBlobReady) {
           onBlobReady(blob);
         }
@@ -52,6 +51,7 @@ export default function VideoPlayer({
         setError(
           err instanceof Error ? err.message : "Failed to load video data"
         );
+      } finally {
         setIsLoading(false);
       }
     };
@@ -61,7 +61,6 @@ export default function VideoPlayer({
     return () => {
       if (currentBlobUrl) {
         URL.revokeObjectURL(currentBlobUrl);
-        console.log("Revoked Blob URL:", currentBlobUrl);
       }
     };
   }, [src, onBlobReady]);

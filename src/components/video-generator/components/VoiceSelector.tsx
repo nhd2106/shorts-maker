@@ -126,11 +126,13 @@ export function VoiceSelector({
                   ))
                 : models &&
                   selectedModel &&
-                  models[selectedModel].voices.map((voice: string) => (
-                    <SelectItem key={voice} value={voice}>
-                      {voice}
-                    </SelectItem>
-                  ))}
+                  (models?.[selectedModel]?.voices ?? []).map(
+                    (voice: string) => (
+                      <SelectItem key={voice} value={voice}>
+                        {voice}
+                      </SelectItem>
+                    )
+                  )}
             </SelectContent>
           </Select>
         </div>

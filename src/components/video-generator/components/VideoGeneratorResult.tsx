@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { motion } from "motion/react";
 import { AlertCircle, RefreshCcw, Loader2 } from "lucide-react";
-import { getDownloadUrl } from "@/api";
+import { API_BASE_URL, getDownloadUrl } from "@/api";
 import { Video, FileText, Image as ImageIcon } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
@@ -35,7 +35,6 @@ export function VideoGeneratorResult({
   const [title, setTitle] = useState("video");
   const [isRetrying, setIsRetrying] = useState(false);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
-  console.log(result);
 
   useEffect(() => {
     // Reset retrying state when status changes
@@ -45,11 +44,9 @@ export function VideoGeneratorResult({
   }, [status]);
 
   useEffect(() => {
-    console.log("called");
     const fetchTitle = async () => {
       try {
         if (result?.content) {
-          console.log(result.content);
           if (result.content.title) {
             setTitle(result.content.title);
           }
@@ -175,7 +172,6 @@ export function VideoGeneratorResult({
       : result.thumbnail?.url
       ? getDownloadUrl(result.thumbnail.url)
       : undefined;
-
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -188,7 +184,14 @@ export function VideoGeneratorResult({
               selectedFormat === "shorts" ? "aspect-[9/16]" : "aspect-[16/9]"
             }`}
           >
-            <VideoPlayer src={videoUrl} onBlobReady={handleVideoBlobReady} />
+            <VideoPlayer
+              src={videoUrl}
+              poster={`${API_BASE_URL}${thumbnailUrl?.replace(
+                "thumbnail",
+                "video"
+              )}`}
+              onBlobReady={handleVideoBlobReady}
+            />
             <Button
               onClick={handleVideoDownload}
               className="gap-2 w-full mt-5"
@@ -222,9 +225,12 @@ export function VideoGeneratorResult({
               <Card className="p-4 space-y-4">
                 <div className="aspect-video rounded-lg overflow-hidden bg-muted">
                   <img
-                    src={thumbnailUrl}
+                    src={`${API_BASE_URL}${thumbnailUrl?.replace(
+                      "thumbnail",
+                      "video"
+                    )}`}
                     alt="Thumbnail"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                     width={500}
                     height={500}
                   />
