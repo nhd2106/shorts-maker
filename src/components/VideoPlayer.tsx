@@ -3,6 +3,7 @@ import { Skeleton } from "./ui/skeleton";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "./ui/alert";
 import axios from "axios";
+import { API_BASE_URL } from "@/api";
 interface VideoPlayerProps {
   src: string;
   poster?: string;
@@ -36,7 +37,7 @@ export default function VideoPlayer({
 
     const fetchVideoBlob = async () => {
       try {
-        const response = await axios.get(`http://localhost:5123${src}`, {
+        const response = await axios.get(`${API_BASE_URL}${src}`, {
           responseType: "blob",
         });
 
