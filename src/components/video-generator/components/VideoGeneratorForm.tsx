@@ -13,6 +13,8 @@ import { Wand2, Sparkles } from "lucide-react";
 import { FormatSelector } from "./FormatSelector";
 import { VoiceSelector } from "./VoiceSelector";
 import { useElevenLabsVoices } from "@/queries/elevenlabs";
+import { ImageProvider } from "./ImageProvider";
+import { MusicSelector } from "./MusicSelector";
 
 interface VideoGeneratorFormProps {
   onSubmit: (data: FormData) => Promise<void>;
@@ -43,6 +45,13 @@ export function VideoGeneratorForm({
       "vi-VN-NamMinhNeural",
       "vi-VN-ThanhMinhNeural",
       "vi-VN-ThuyTrangNeural",
+      "en-US-AriaNeural",
+      "en-US-EricNeural",
+      "en-US-ChristopherNeural",
+      "en-US-GuyNeural",
+      "en-US-JennyNeural",
+      "en-US-MichelleNeural",
+      "en-US-RogerNeural",
       "alloy",
       "nova",
       "shimmer",
@@ -51,6 +60,10 @@ export function VideoGeneratorForm({
       "vivos",
       ...(voices?.voices.map((voice: any) => voice.voice_id) || []),
     ]),
+    imageProvider: z.enum(["default", "openai"], {
+      required_error: "Please select an image provider",
+    }),
+    backgroundMusic: z.string().optional(),
   });
   const {
     register,
@@ -64,12 +77,16 @@ export function VideoGeneratorForm({
       videoFormat: "shorts",
       voiceModel: "edge",
       voice: "vi-VN-NamMinhNeural",
+      imageProvider: "default",
+      backgroundMusic: "",
     },
   });
 
   const selectedFormat = watch("videoFormat");
   const selectedModel = watch("voiceModel");
   const selectedVoice = watch("voice");
+  const selectedImageProvider = watch("imageProvider");
+  const selectedMusic = watch("backgroundMusic");
 
   const handleFormatSelect = (format: "shorts" | "normal") => {
     setValue("videoFormat", format);
@@ -88,6 +105,14 @@ export function VideoGeneratorForm({
 
   const handleVoiceSelect = (voice: string) => {
     setValue("voice", voice as any);
+  };
+
+  const handleImageProviderSelect = (provider: string) => {
+    setValue("imageProvider", provider as any);
+  };
+
+  const handleMusicSelect = (music: string) => {
+    setValue("backgroundMusic", music);
   };
 
   const generateIdeas = [
@@ -152,6 +177,16 @@ export function VideoGeneratorForm({
         onModelSelect={handleModelSelect}
         onVoiceSelect={handleVoiceSelect}
         elevenlabsVoices={voices?.voices}
+      />
+      <div>
+        <ImageProvider
+          selectedProvider={selectedImageProvider}
+          onProviderSelect={handleImageProviderSelect}
+        />
+      </div>
+      <MusicSelector
+        selectedMusic={selectedMusic || ""}
+        onMusicSelect={handleMusicSelect}
       />
 
       <div className="flex gap-4">

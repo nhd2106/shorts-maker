@@ -135,6 +135,8 @@ export default function VideoGenerator() {
         tts_model: formData.voiceModel,
         voice: formData.voice,
         api_keys: apiKeys,
+        imageProvider: formData.imageProvider,
+        backgroundMusic: formData.backgroundMusic,
       })) as GenerateInitialResponse;
 
       // Set current request ID and navigate to workspace
@@ -147,6 +149,8 @@ export default function VideoGenerator() {
         format: formData.videoFormat,
         tts_model: formData.voiceModel,
         voice: formData.voice,
+        imageProvider: formData.imageProvider,
+        backgroundMusic: formData.backgroundMusic,
       };
 
       // Add to history
@@ -195,6 +199,8 @@ export default function VideoGenerator() {
         format: formData.videoFormat,
         tts_model: formData.voiceModel,
         voice: formData.voice,
+        imageProvider: formData.imageProvider,
+        backgroundMusic: formData.backgroundMusic,
       };
 
       // Add to history
@@ -238,6 +244,8 @@ export default function VideoGenerator() {
           tts_model: lastItem.tts_model || "edge",
           voice: lastItem.voice || "vi-VN-NamMinhNeural",
           api_keys: apiKeys,
+          imageProvider: lastItem.imageProvider || "default",
+          backgroundMusic: lastItem.backgroundMusic || "",
         });
 
         // Update history with the new request ID
@@ -261,6 +269,7 @@ export default function VideoGenerator() {
           id: response.request_id,
           status: "generating_content" as GenerationStatus,
           timestamp: new Date(),
+          backgroundMusic: lastItem.backgroundMusic || "",
         };
         checkStatus(response.request_id);
       } catch (err) {

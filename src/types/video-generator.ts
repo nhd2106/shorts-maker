@@ -1,9 +1,17 @@
 import { GenerateResponse, GenerationStatus } from "./api";
 
-export type VoiceOption = 
+export type VoiceOption =
   | "vi-VN-NamMinhNeural"
   | "vi-VN-ThanhMinhNeural"
   | "vi-VN-ThuyTrangNeural"
+  | "en-US-AriaNeural"
+  | "en-US-EricNeural"
+  | "en-US-ChristopherNeural"
+  | "en-US-GuyNeural"
+  | "en-US-JennyNeural"
+  | "en-US-MichelleNeural"
+  | "en-US-RogerNeural"
+  | "en-US-SteffanNeural"
   | "alloy"
   | "nova"
   | "shimmer"
@@ -13,12 +21,14 @@ export type VoiceOption =
 
 export type TTSModel = "edge" | "openai" | "google" | "vixtts";
 
-export type FormData = {
+export interface FormData {
   idea: string;
   videoFormat: "shorts" | "normal";
   voiceModel: TTSModel;
   voice: VoiceOption;
-};
+  imageProvider: "default" | "openai";
+  backgroundMusic: string;
+}
 
 export type HistoryItem = {
   id: string;
@@ -29,4 +39,14 @@ export type HistoryItem = {
   result?: GenerateResponse;
   tts_model?: TTSModel;
   voice?: VoiceOption;
+  imageProvider?: "default" | "openai";
+  backgroundMusic?: string;
 };
+
+// export interface GenerateScriptResponse {
+//   // Define fields later if needed
+// }
+
+// export interface GenerateAudioResponse {
+//   // Define fields later if needed
+// }

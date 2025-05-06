@@ -60,7 +60,6 @@ export function VideoGeneratorResult({
   }, [result, status]);
 
   const handleVideoBlobReady = useCallback((blob: Blob) => {
-    console.log("Video blob received in parent:", blob);
     setVideoBlob(blob);
   }, []);
 

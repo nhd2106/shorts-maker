@@ -4,6 +4,7 @@ import { getVoices } from "@/apis/elevenlabs";
 
 export const useElevenLabsVoices = (apiKey: string) => {
   return useQuery({
+    enabled: !!apiKey,
     queryKey: ["elevenlabs-voices"],
     queryFn: () => getVoices(apiKey),
     ...HOUR,

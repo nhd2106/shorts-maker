@@ -3,11 +3,12 @@ import { invoke } from "@tauri-apps/api/core";
 // import { Command } from "@tauri-apps/plugin-shell";
 import { listen } from "@tauri-apps/api/event";
 import axios from "axios";
+import { VoiceOption } from "./types/video-generator";
 
 // const message = "tauri";
 
-export const API_BASE_URL = "https://shorts.duoc95.com";
-// export const API_BASE_URL = "http://localhost:5123";
+// export const API_BASE_URL = "https://shorts.duoc95.com";
+export const API_BASE_URL = "http://localhost:5123";
 // const API_BASE_URL = ""; // Empty base URL will use relative paths, working with the Vite proxy
 
 // Create axios instance with default config
@@ -22,21 +23,14 @@ export async function generateVideo(data: {
   idea: string;
   format: "shorts" | "normal";
   tts_model: "edge" | "openai" | "google" | "vixtts";
-  voice:
-    | "vi-VN-NamMinhNeural"
-    | "vi-VN-ThanhMinhNeural"
-    | "vi-VN-ThuyTrangNeural"
-    | "alloy"
-    | "nova"
-    | "shimmer"
-    | "echo"
-    | "fable"
-    | "vivos";
+  voice: VoiceOption;
   api_keys: {
     openai?: string;
     elevenlabs?: string;
     together?: string;
   };
+  imageProvider: "default" | "openai";
+  backgroundMusic?: string;
 }): Promise<GenerateInitialResponse> {
   try {
     const { data: response } = await api.post("/api/generate", {
@@ -106,6 +100,14 @@ export async function prepareVideoData(data: {
     | "vi-VN-NamMinhNeural"
     | "vi-VN-ThanhMinhNeural"
     | "vi-VN-ThuyTrangNeural"
+    | "en-US-AriaNeural"
+    | "en-US-EricNeural"
+    | "en-US-ChristopherNeural"
+    | "en-US-GuyNeural"
+    | "en-US-JennyNeural"
+    | "en-US-MichelleNeural"
+    | "en-US-RogerNeural"
+    | "en-US-SteffanNeural"
     | "alloy"
     | "nova"
     | "shimmer"
