@@ -7,8 +7,8 @@ import { VoiceOption } from "./types/video-generator";
 
 // const message = "tauri";
 
-// export const API_BASE_URL = "https://shorts.duoc95.com";
-export const API_BASE_URL = "http://localhost:5123";
+export const API_BASE_URL = "https://shorts.duoc95.com";
+// export const API_BASE_URL = "http://localhost:5123";
 // const API_BASE_URL = ""; // Empty base URL will use relative paths, working with the Vite proxy
 
 // Create axios instance with default config
