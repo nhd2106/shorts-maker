@@ -7,9 +7,10 @@ import { VoiceOption } from "./types/video-generator";
 
 // const message = "tauri";
 
-export const API_BASE_URL = "https://shorts.duoc95.com";
-// export const API_BASE_URL = "http://localhost:5123";
-// const API_BASE_URL = ""; // Empty base URL will use relative paths, working with the Vite proxy
+export const API_BASE_URL =
+  import.meta.env.MODE === "development"
+    ? "http://localhost:5123"
+    : "https://shorts.duoc95.com";
 
 // Create axios instance with default config
 const api = axios.create({
@@ -29,7 +30,7 @@ export async function generateVideo(data: {
     elevenlabs?: string;
     together?: string;
   };
-  imageProvider: "default" | "openai";
+  imageProvider: "google" | "openai";
   backgroundMusic?: string;
 }): Promise<GenerateInitialResponse> {
   try {
@@ -91,46 +92,6 @@ export const deleteVideo = async (requestId: string) => {
   const { data } = await api.delete(`/api/content/${requestId}`);
   return data;
 };
-
-export async function prepareVideoData(data: {
-  idea: string;
-  video_format?: "shorts" | "normal";
-  tts_model?: "edge" | "openai" | "google" | "vixtts";
-  voice?:
-    | "vi-VN-NamMinhNeural"
-    | "vi-VN-ThanhMinhNeural"
-    | "vi-VN-ThuyTrangNeural"
-    | "en-US-AriaNeural"
-    | "en-US-EricNeural"
-    | "en-US-ChristopherNeural"
-    | "en-US-GuyNeural"
-    | "en-US-JennyNeural"
-    | "en-US-MichelleNeural"
-    | "en-US-RogerNeural"
-    | "en-US-SteffanNeural"
-    | "alloy"
-    | "nova"
-    | "shimmer"
-    | "echo"
-    | "fable"
-    | "vivos";
-}): Promise<GenerateInitialResponse> {
-  try {
-    const { data: response } = await api.post("/api/prepare", {
-      ...data,
-      video_format: data.video_format || "shorts",
-      tts_model: data.tts_model || "edge",
-    });
-    return response;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      throw new Error(
-        error.response?.data?.error || "Failed to prepare video data"
-      );
-    }
-    throw error;
-  }
-}
 
 // Add a flag to track if sidecar is starting
 let isSidecarStarting = false;

@@ -40,6 +40,7 @@ const formSchema = z.object({
     "echo",
     "fable",
     "vivos",
+    "onyx",
   ]),
 });
 

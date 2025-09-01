@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { checkGenerationStatus, generateVideo, prepareVideoData } from "@/api";
+import { checkGenerationStatus, generateVideo } from "@/api";
 import {
   GenerateResponse,
   GenerationStatus,
@@ -119,6 +119,7 @@ export default function VideoGenerator() {
 
   const handleSubmit = async (formData: FormData) => {
     try {
+      console.log("claled");
       // Reset states
       setError(null);
       setStatus("generating_content");
@@ -164,61 +165,9 @@ export default function VideoGenerator() {
       // Navigate to workspace page
       navigate(`/${response.request_id}`);
     } catch (err) {
-      console.log("Error generating video:", err);
       setError(err instanceof Error ? err.message : "Failed to generate video");
       setStatus("failed");
       currentRequestIdRef.current = null;
-    }
-  };
-
-  const handlePrepare = async (formData: FormData) => {
-    try {
-      // Reset states
-      setError(null);
-      setStatus("generating_content");
-      setProgress(0);
-      setStageDescription("Preparing video data...");
-      setSelectedFormat(formData.videoFormat);
-      setIsFormVisible(false);
-      setResult(null);
-
-      const response = await prepareVideoData({
-        idea: formData.idea,
-        video_format: formData.videoFormat,
-        tts_model: formData.voiceModel,
-        voice: formData.voice,
-      });
-
-      // Set current request ID and start status checking
-      currentRequestIdRef.current = response.request_id;
-      currentHistoryItemRef.current = {
-        id: response.request_id,
-        idea: formData.idea,
-        timestamp: new Date(),
-        status: "generating_content",
-        format: formData.videoFormat,
-        tts_model: formData.voiceModel,
-        voice: formData.voice,
-        imageProvider: formData.imageProvider,
-        backgroundMusic: formData.backgroundMusic,
-      };
-
-      // Add to history
-      const newHistory = [
-        currentHistoryItemRef.current,
-        ...history,
-      ] as HistoryItem[];
-      saveHistoryToLocalStorage(newHistory);
-      setHistory(newHistory);
-
-      // Start checking status
-      setTimeout(() => checkStatus(response.request_id), 1000);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to prepare video data"
-      );
-      setStatus("failed");
-      setIsFormVisible(true);
     }
   };
 
@@ -244,7 +193,7 @@ export default function VideoGenerator() {
           tts_model: lastItem.tts_model || "edge",
           voice: lastItem.voice || "vi-VN-NamMinhNeural",
           api_keys: apiKeys,
-          imageProvider: lastItem.imageProvider || "default",
+          imageProvider: lastItem.imageProvider || "google",
           backgroundMusic: lastItem.backgroundMusic || "",
         });
 
@@ -331,9 +280,8 @@ export default function VideoGenerator() {
             <div className="space-y-6">
               <VideoGeneratorForm
                 onSubmit={handleSubmit}
-                onPrepare={handlePrepare}
-                status={status}
                 setSelectedFormat={setSelectedFormat}
+                status={status}
               />
 
               {/* Image Upload Section */}

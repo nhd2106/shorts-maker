@@ -17,7 +17,8 @@ export type VoiceOption =
   | "shimmer"
   | "echo"
   | "fable"
-  | "vivos";
+  | "vivos"
+  | "onyx";
 
 export type TTSModel = "edge" | "openai" | "google" | "vixtts";
 
@@ -26,7 +27,7 @@ export interface FormData {
   videoFormat: "shorts" | "normal";
   voiceModel: TTSModel;
   voice: VoiceOption;
-  imageProvider: "default" | "openai";
+  imageProvider: "google" | "openai";
   backgroundMusic: string;
 }
 
@@ -39,7 +40,7 @@ export type HistoryItem = {
   result?: GenerateResponse;
   tts_model?: TTSModel;
   voice?: VoiceOption;
-  imageProvider?: "default" | "openai";
+  imageProvider?: "google" | "openai";
   backgroundMusic?: string;
 };
 

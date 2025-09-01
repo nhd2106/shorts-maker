@@ -11,7 +11,7 @@ import { motion } from "motion/react";
 
 // Define available image providers
 // const imageProviders = ["default", "openai"];
-const imageProviders = ["default"];
+const imageProviders = ["google"];
 
 interface ImageProviderProps {
   onProviderSelect: (provider: string) => void;

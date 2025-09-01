@@ -26,3 +26,5 @@ dist-ssr
 # Tauri build output
 src-tauri/target/
 src-tauri/binaries/
+
+.env

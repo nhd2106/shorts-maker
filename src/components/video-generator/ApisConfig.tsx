@@ -16,6 +16,7 @@ type ApiKeys = {
   openai: string;
   together: string;
   elevenlabs: string;
+  google: string;
 };
 
 const ApisConfig = () => {
@@ -28,6 +29,7 @@ const ApisConfig = () => {
           openai: "",
           together: "",
           elevenlabs: "",
+          google: "",
         };
   });
 
@@ -50,7 +52,17 @@ const ApisConfig = () => {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="openai">OpenAI API Key</Label>
+              <Label htmlFor="openai">
+                OpenAI API Key{" "}
+                <span className="text-xs text-blue-500 underline">
+                  <a
+                    href="https://platform.openai.com/account/api-keys"
+                    target="_blank"
+                  >
+                    Get API Key
+                  </a>
+                </span>
+              </Label>
               <Input
                 id="openai"
                 type="password"
@@ -62,7 +74,14 @@ const ApisConfig = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="together">Together AI API Key</Label>
+              <Label htmlFor="together">
+                Together AI API Key{" "}
+                <span className="text-xs text-blue-500 underline">
+                  <a href="https://api.together.ai/signin" target="_blank">
+                    Get API Key
+                  </a>
+                </span>
+              </Label>
               <Input
                 id="together"
                 type="password"
@@ -74,13 +93,42 @@ const ApisConfig = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="elevenlabs">ElevenLabs API Key</Label>
+              <Label htmlFor="elevenlabs">
+                ElevenLabs API Key{" "}
+                <span className="text-xs text-blue-500 underline">
+                  <a href="https://elevenlabs.io/app/home" target="_blank">
+                    Get API Key
+                  </a>
+                </span>
+              </Label>
               <Input
                 id="elevenlabs"
                 type="password"
                 value={apiKeys.elevenlabs}
                 onChange={(e) =>
                   setApiKeys({ ...apiKeys, elevenlabs: e.target.value })
+                }
+              />
+            </div>
+            {/* TODO: add google api key selection */}
+            <div className="space-y-2">
+              <Label htmlFor="google">
+                Google API Key{" "}
+                <span className="text-xs text-blue-500 underline">
+                  <a
+                    href="https://console.developers.google.com/"
+                    target="_blank"
+                  >
+                    Get API Key
+                  </a>
+                </span>
+              </Label>
+              <Input
+                id="google"
+                type="password"
+                value={apiKeys.google}
+                onChange={(e) =>
+                  setApiKeys({ ...apiKeys, google: e.target.value })
                 }
               />
             </div>

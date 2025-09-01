@@ -18,16 +18,14 @@ import { MusicSelector } from "./MusicSelector";
 
 interface VideoGeneratorFormProps {
   onSubmit: (data: FormData) => Promise<void>;
-  onPrepare: (data: FormData) => Promise<void>;
-  status: string;
   setSelectedFormat: (format: "shorts" | "normal") => void;
+  status: string;
 }
 
 export function VideoGeneratorForm({
   onSubmit,
-  onPrepare,
-  status,
   setSelectedFormat,
+  status,
 }: VideoGeneratorFormProps) {
   const localApiKeys = localStorage.getItem("api-keys");
   const apiKeys = localApiKeys ? JSON.parse(localApiKeys) : {};
@@ -58,9 +56,10 @@ export function VideoGeneratorForm({
       "echo",
       "fable",
       "vivos",
+      "onyx",
       ...(voices?.voices.map((voice: any) => voice.voice_id) || []),
     ]),
-    imageProvider: z.enum(["default", "openai"], {
+    imageProvider: z.enum(["google", "openai"], {
       required_error: "Please select an image provider",
     }),
     backgroundMusic: z.string().optional(),
@@ -77,7 +76,7 @@ export function VideoGeneratorForm({
       videoFormat: "shorts",
       voiceModel: "edge",
       voice: "vi-VN-NamMinhNeural",
-      imageProvider: "default",
+      imageProvider: "google",
       backgroundMusic: "",
     },
   });
@@ -107,7 +106,7 @@ export function VideoGeneratorForm({
     setValue("voice", voice as any);
   };
 
-  const handleImageProviderSelect = (provider: string) => {
+  const handleImageProviderSelect = (provider: string = "google") => {
     setValue("imageProvider", provider as any);
   };
 
@@ -190,27 +189,6 @@ export function VideoGeneratorForm({
       />
 
       <div className="flex gap-4">
-        <Button
-          type="button"
-          className="flex-1 gap-2"
-          size="lg"
-          variant="outline"
-          disabled={isSubmitting || status === "generating"}
-          onClick={handleSubmit(onPrepare)}
-        >
-          {isSubmitting || status === "generating" ? (
-            <>
-              <div className="w-4 h-4 border-2 border-current border-t-transparent animate-spin rounded-full" />
-              Preparing...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-5 h-5" />
-              Prepare Data
-            </>
-          )}
-        </Button>
-
         <Button
           type="submit"
           className="flex-1 gap-2"
