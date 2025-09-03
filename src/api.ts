@@ -13,7 +13,7 @@ export const API_BASE_URL =
     : "https://shorts.duoc95.com";
 
 // Create axios instance with default config
-const api = axios.create({
+export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
@@ -32,11 +32,12 @@ export async function generateVideo(data: {
   };
   imageProvider: "google" | "openai";
   backgroundMusic?: string;
+  captionStyle?: string;
 }): Promise<GenerateInitialResponse> {
   try {
     const { data: response } = await api.post("/api/generate", {
       ...data,
-      caption_effect: "karaoke",
+      captionStyle: data.captionStyle || "splitColor",
     });
     return response;
   } catch (error) {

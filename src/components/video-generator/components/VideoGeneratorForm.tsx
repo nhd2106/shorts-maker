@@ -6,15 +6,18 @@ import { z } from "zod";
 import { FormData } from "@/types/video-generator";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { motion } from "motion/react";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Wand2, Sparkles } from "lucide-react";
+import { 
+  Wand2, 
+  Sparkles
+} from "lucide-react";
 import { FormatSelector } from "./FormatSelector";
 import { VoiceSelector } from "./VoiceSelector";
 import { useElevenLabsVoices } from "@/queries/elevenlabs";
 import { ImageProvider } from "./ImageProvider";
 import { MusicSelector } from "./MusicSelector";
+import { CaptionStyleSelector } from "./CaptionStyleSelector";
 
 interface VideoGeneratorFormProps {
   onSubmit: (data: FormData) => Promise<void>;
@@ -63,6 +66,7 @@ export function VideoGeneratorForm({
       required_error: "Please select an image provider",
     }),
     backgroundMusic: z.string().optional(),
+    captionStyle: z.string().optional(),
   });
   const {
     register,
@@ -78,6 +82,7 @@ export function VideoGeneratorForm({
       voice: "vi-VN-NamMinhNeural",
       imageProvider: "google",
       backgroundMusic: "",
+      captionStyle: "karaoke",
     },
   });
 
@@ -86,6 +91,7 @@ export function VideoGeneratorForm({
   const selectedVoice = watch("voice");
   const selectedImageProvider = watch("imageProvider");
   const selectedMusic = watch("backgroundMusic");
+  const selectedCaptionStyle = watch("captionStyle");
 
   const handleFormatSelect = (format: "shorts" | "normal") => {
     setValue("videoFormat", format);
@@ -114,6 +120,10 @@ export function VideoGeneratorForm({
     setValue("backgroundMusic", music);
   };
 
+  const handleCaptionStyleSelect = (style: string) => {
+    setValue("captionStyle", style);
+  };
+
   const generateIdeas = [
     "Create a video about the top 5 most fascinating scientific discoveries",
     "Make a tutorial on how to improve productivity with simple habits",
@@ -123,91 +133,108 @@ export function VideoGeneratorForm({
   ];
 
   return (
-    <motion.form
-      onSubmit={handleSubmit(onSubmit)}
-      className="space-y-8"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-    >
-      <div className="space-y-4">
-        <Label htmlFor="idea">Video Idea</Label>
-        <Card className="p-4 space-y-4">
-          <Textarea
-            id="idea"
-            placeholder="Enter your video idea here..."
-            className="min-h-[120px] resize-none"
-            {...register("idea")}
-          />
-          {errors.idea && (
-            <p className="text-sm text-red-500">{errors.idea.message}</p>
-          )}
-          <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground">
-              Need inspiration? Try these ideas:
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              {generateIdeas.map((idea, index) => (
-                <Button
-                  key={index}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  onClick={() => setValue("idea", idea)}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Use This
-                </Button>
-              ))}
+    <div className="max-w-3xl mx-auto">
+
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-6"
+      >
+        {/* Video Idea */}
+        <div className="space-y-2">
+          <Label htmlFor="idea">Video Idea</Label>
+          <Card className="p-4">
+            <div className="space-y-3">
+              
+              <Textarea
+                id="idea"
+                placeholder="Enter your video idea..."
+                className="min-h-[100px] resize-none"
+                {...register("idea")}
+              />
+              
+              {errors.idea && (
+                <p className="text-sm text-red-500">
+                  {errors.idea.message}
+                </p>
+              )}
+              
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Quick ideas:</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {generateIdeas.slice(0, 3).map((idea, index) => (
+                  <Button
+                    key={index}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => setValue("idea", idea)}
+                  >
+                    {idea.split(" ").slice(0, 5).join(" ")}...
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
-        </Card>
-      </div>
+          </Card>
+        </div>
 
-      <FormatSelector
-        selectedFormat={selectedFormat}
-        onFormatSelect={handleFormatSelect}
-      />
+        {/* Format Selection */}
+        <FormatSelector
+          selectedFormat={selectedFormat}
+          onFormatSelect={handleFormatSelect}
+        />
 
-      <VoiceSelector
-        selectedModel={selectedModel}
-        selectedVoice={selectedVoice}
-        onModelSelect={handleModelSelect}
-        onVoiceSelect={handleVoiceSelect}
-        elevenlabsVoices={voices?.voices}
-      />
-      <div>
+        {/* Voice Selection */}
+        <VoiceSelector
+          selectedModel={selectedModel}
+          selectedVoice={selectedVoice}
+          onModelSelect={handleModelSelect}
+          onVoiceSelect={handleVoiceSelect}
+          elevenlabsVoices={voices?.voices}
+        />
+
+        {/* Image Provider */}
         <ImageProvider
           selectedProvider={selectedImageProvider}
           onProviderSelect={handleImageProviderSelect}
         />
-      </div>
-      <MusicSelector
-        selectedMusic={selectedMusic || ""}
-        onMusicSelect={handleMusicSelect}
-      />
 
-      <div className="flex gap-4">
-        <Button
-          type="submit"
-          className="flex-1 gap-2"
-          size="lg"
-          disabled={isSubmitting || status === "generating"}
-        >
-          {isSubmitting || status === "generating" ? (
-            <>
-              <div className="w-4 h-4 border-2 border-current border-t-transparent animate-spin rounded-full" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Wand2 className="w-5 h-5" />
-              Generate Video
-            </>
-          )}
-        </Button>
-      </div>
-    </motion.form>
+        {/* Caption Style */}
+        <CaptionStyleSelector
+          selectedStyle={selectedCaptionStyle || "karaoke"}
+          onStyleSelect={handleCaptionStyleSelect}
+        />
+
+        {/* Background Music */}
+        <MusicSelector
+          selectedMusic={selectedMusic || ""}
+          onMusicSelect={handleMusicSelect}
+        />
+
+        {/* Generate Button */}
+        <div className="flex justify-center pt-4">
+          <Button
+            type="submit"
+            className="px-8 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            size="lg"
+            disabled={isSubmitting || status === "generating"}
+          >
+            {isSubmitting || status === "generating" ? (
+              <>
+                <div className="w-4 h-4 border-2 border-current border-t-transparent animate-spin rounded-full mr-2" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Wand2 className="w-4 h-4 mr-2" />
+                Generate Video
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 }

@@ -29,6 +29,7 @@ export interface FormData {
   voice: VoiceOption;
   imageProvider: "google" | "openai";
   backgroundMusic: string;
+  captionStyle?: string;
 }
 
 export type HistoryItem = {
@@ -42,6 +43,7 @@ export type HistoryItem = {
   voice?: VoiceOption;
   imageProvider?: "google" | "openai";
   backgroundMusic?: string;
+  captionStyle?: string;
 };
 
 // export interface GenerateScriptResponse {

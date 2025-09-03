@@ -138,6 +138,7 @@ export default function VideoGenerator() {
         api_keys: apiKeys,
         imageProvider: formData.imageProvider,
         backgroundMusic: formData.backgroundMusic,
+        captionStyle: formData.captionStyle || "karaoke",
       })) as GenerateInitialResponse;
 
       // Set current request ID and navigate to workspace
@@ -152,6 +153,7 @@ export default function VideoGenerator() {
         voice: formData.voice,
         imageProvider: formData.imageProvider,
         backgroundMusic: formData.backgroundMusic,
+        captionStyle: formData.captionStyle || "karaoke",
       };
 
       // Add to history
@@ -195,6 +197,7 @@ export default function VideoGenerator() {
           api_keys: apiKeys,
           imageProvider: lastItem.imageProvider || "google",
           backgroundMusic: lastItem.backgroundMusic || "",
+          captionStyle: lastItem.captionStyle || "karaoke",
         });
 
         // Update history with the new request ID
@@ -219,6 +222,7 @@ export default function VideoGenerator() {
           status: "generating_content" as GenerationStatus,
           timestamp: new Date(),
           backgroundMusic: lastItem.backgroundMusic || "",
+          captionStyle: lastItem.captionStyle || "karaoke",
         };
         checkStatus(response.request_id);
       } catch (err) {
